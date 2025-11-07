@@ -44,20 +44,43 @@ zipR([R|RT], [L|LT], [r(R, L)|T]) :-
 % Ejercicio 4
 
 
-celdaX_O(x).
-celdaX_O(o).
 
 pintadasValidas(r([],L)) :- length(L,C),replicar(o,C,L).
-pintadasValidas(r([X|XS], L)) :- 
-	maplist(celdaX_O, L).
+pintadasValidas(r([X|R], L)) :- 
+	length(L,N),
+	sumlist([X|R], Sum),
+	length([X|R], K),
+	MaxIni is N - Sum - K + 1,  
+	between(0, MaxIni, X1),
+	replicar(o,X1,L0),
+	Espacios is N - X1,
+	pintadasAux([X|R], Espacios, LPintada),
+	append(L0, LPintada, L).
+
+pintadasAux([X], Espacios, L) :- 
+    replicar(x, X, Lpintada),	 
+    EspaciosRestantes is Espacios - X,
+    replicar(o, EspaciosRestantes, Lresto),
+    append(Lpintada, Lresto, L).
+
+pintadasAux([X|XS], Espacios, L):-
+	XS \= [],
+	replicar(x, X, Lpintada), 
+	sumlist(XS, Sum),      
+	length(XS, OentreRest),	
+	MaxOs is Espacios - X -  Sum + OentreRest,   
+	minOs(XS, V),
+	MaxOs >= 0,
+	between(V,MaxOs, CantO),
+	replicar(o, CantO, BloqueOs),
+	EspaciosSiguiente is Espacios - X - CantO,
+	pintadasAux(XS, EspaciosSiguiente, LRec),
+	append(Lpintada, BloqueOs, LAct),
+	append(LAct, LRec, L).
 
 
-pintadas([],_,_,L) :- length(L,N), replicar(o,N,L).
-
-
-
-
-
+minOs([], 0).
+minOs([_|_], 1).
 
 % Ejercicio 5
 resolverNaive(_) :-
