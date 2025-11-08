@@ -83,12 +83,23 @@ minOs([], 0).
 minOs([_|_], 1).
 
 % Ejercicio 5
-resolverNaive(_) :-
-	completar("Ejercicio 5").
+resolverNaive(nono(NN,Celdas)) :-
+	maplist(pintadasValidas, Celdas).
 
 % Ejercicio 6
-pintarObligatorias(_) :-
-	completar("Ejercicio 6").
+pintarObligatorias(r(Res,Celdas)) :-
+  length(Celdas, K),
+  length(Pintadas, K),
+  findall(Pintadas ,pintadasValidas(r(Res, Pintadas)), TodasPintadas),
+  nth1(1,TodasPintadas, Fila),
+  combinarFila(TodasPintadas, Fila, Celdas).
+
+combinarFila([], Celdas, Celdas).
+combinarFila([X|TodasPintadas], Fila, Celdas):-
+  maplist(combinarCelda, X, Fila, Salida),
+  combinarFila(TodasPintadas, Salida, Celdas).
+
+
 
 % Predicado dado combinarCelda/3
 combinarCelda(A, B, _) :-
