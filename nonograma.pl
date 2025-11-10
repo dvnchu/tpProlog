@@ -2,29 +2,34 @@
 
 % Ejercicio 1
 
-%Crea la matriz con F elementos, luego aplica maplist para que sean filas de long C
 matriz(F, C, M) :-
+	%Asegura las filas que va a tener la matriz
 	length(M, F),
+	%Las Posiciones de M tienen Filas de C posiciones C/U
 	maplist(fila(C), M).
 
 fila(C, FILA) :- length(FILA, C).
 
 % Ejercicio 2
 
-replicar(X,0,[]).
+
+%Mientras N sea > 0 el Head de la lista es X
+replicar(_,0,[]).
 replicar(X, N, [X|YS]) :-  
-	N > 0, 
+	N > 0,
 	N2 is N-1,
 	replicar(X,N2,YS).
 
 % Ejercicio 3
 
-transponer([[]|XS], []).
+transponer([[]|_], []).
 transponer(M,[Fila|MT]):-
 	transponerfila(M, Fila, Res),
+	%Res es M con una columna menos
 	transponer(Res, MT).
 
 transponerfila([],[],[]).
+%Va vaciando la matriz M a la vez que unifica la columna de M con la fila de MT
 transponerfila([[X|XS]|M], [X|YS], [XS|MT]) :- transponerfila(M, YS, MT).
 
 % Predicado dado armarNono/3
@@ -44,19 +49,24 @@ zipR([R|RT], [L|LT], [r(R, L)|T]) :-
 % Ejercicio 4
 
 
-
+%Si no tiene restricciones llena con o
 pintadasValidas(r([],L)) :- length(L,C),replicar(o,C,L).
 pintadasValidas(r([X|R], L)) :- 
 	length(L,N),
 	sumlist([X|R], Sum),
 	length([X|R], K),
+	%Usa largo de L,  la sumatoria de Res y su largo para tener en cuenta todos los blancos entre pintadas
 	MaxIni is N - Sum - K + 1,  
 	between(0, MaxIni, X1),
+	%Genera todos  los comienzos poniendo de 0 a MaxIni o´s
 	replicar(o,X1,L0),
 	Espacios is N - X1,
+	%Llama al aux con cada una para obtener todas las pintadas posibles
 	pintadasAux([X|R], Espacios, LPintada),
 	append(L0, LPintada, L).
 
+%Caso base una restricción, muy util para evitar repetidos
+%Simplemente recibe una lista y una restricción, pone las x y completa con o´s
 pintadasAux([X], Espacios, L) :- 
     replicar(x, X, Lpintada),	 
     EspaciosRestantes is Espacios - X,
@@ -64,40 +74,48 @@ pintadasAux([X], Espacios, L) :-
     append(Lpintada, Lresto, L).
 
 pintadasAux([X|XS], Espacios, L):-
-	XS \= [],
+	%Pone tantas x como pida la primera restricción
 	replicar(x, X, Lpintada), 
 	sumlist(XS, Sum),      
 	length(XS, OentreRest),	
+	%Calcula cuantos o´s puede poner(muy similar a maxIni)
 	MaxOs is Espacios - X -  Sum + OentreRest,   
-	minOs(XS, V),
 	MaxOs >= 0,
-	between(V,MaxOs, CantO),
+	between(1,MaxOs, CantO),
 	replicar(o, CantO, BloqueOs),
 	EspaciosSiguiente is Espacios - X - CantO,
+N Tamaño Sol_Unica  Deducible_Sin_BT
+%0  2x3		Y				Y			
+%1  5x5		Y				Y
+%2  5x5		Y				Y
+	%Usa la misma lógica que en la principal y genera las cantidades de o´s
+	%Solo que aca tiene que generar el resto de restricciones
 	pintadasAux(XS, EspaciosSiguiente, LRec),
+	%luego junta la pintada actual con las o´s y el resultado con la llamada recursiva
 	append(Lpintada, BloqueOs, LAct),
 	append(LAct, LRec, L).
 
 
-minOs([], 0).
-minOs([_|_], 1).
-
 % Ejercicio 5
-resolverNaive(nono(NN,Celdas)) :-
+resolverNaive(nono(_,Celdas)) :-
+	%Todas las combinaciones de pintadas validas posibles, por eso "naive"
 	maplist(pintadasValidas, Celdas).
 
 % Ejercicio 6
-pintarObligatorias(r(Res,Celdas)) :-
-  length(Celdas, K),
-  length(Pintadas, K),
-  findall(Pintadas ,pintadasValidas(r(Res, Pintadas)), TodasPintadas),
-  nth1(1,TodasPintadas, Fila),
-  combinarFila(TodasPintadas, Fila, Celdas).
 
-combinarFila([], Celdas, Celdas).
-combinarFila([X|TodasPintadas], Fila, Celdas):-
-  maplist(combinarCelda, X, Fila, Salida),
-  combinarFila(TodasPintadas, Salida, Celdas).
+
+pintarObligatorias(r(Res,Celdas)) :-
+  findall(Celdas ,pintadasValidas(r(Res, Celdas)), TodasPintadas),
+ %Genera todas las formas posibles de pintar Celdas para combinarlas
+  combinar(TodasPintadas, Celdas).
+
+combinar([],[]).
+%Si tengo una sola fila mi combinación es esa fila
+combinar([X], X).
+combinar([X,Y|TodasPintadas], Celdas):-
+  %Si tengo dos o mas, combino celda a celda y guardo en un acumulador hasta tener una sola
+  maplist(combinarCelda, X, Y , SolParcial),
+  combinar([SolParcial|TodasPintadas], Celdas).
 
 
 
@@ -121,47 +139,77 @@ combinarCelda(A, B, _) :-
 	A \== B.
 
 % Ejercicio 7
-deducir1Pasada(_) :-
-	completar("Ejercicio 7").
+deducir1Pasada(nono(_,Celdas)) :-
+    %Pinto las obligatorias de cada celda
+	maplist(pintarObligatorias, Celdas).
 
 % Predicado dado
 cantidadVariablesLibres(T, N) :-
 	term_variables(T, LV),
 	length(LV, N).
 
+
 % Predicado dado
 deducirVariasPasadas(NN) :-
-	NN = nono(M, _),
-	cantidadVariablesLibres(M, VI),
-	% VI = cantidad de celdas sin instanciar en M en este punto
+	NN = nono(M,_),
+	cantidadVariablesLibres(M, VI), % VI = cantidad de celdas sin instanciar en M en este punto
 	deducir1Pasada(NN),
-	cantidadVariablesLibres(M, VF),
-	% VF = cantidad de celdas sin instanciar en M en este punto
+	cantidadVariablesLibres(M, VF), % VF = cantidad de celdas sin instanciar en M en este punto
 	deducirVariasPasadasCont(NN, VI, VF).
 
 % Predicado dado
-deducirVariasPasadasCont(_,, ,  ,  % Si VI = VF entonces no hubo más cambios y frenamos.
-deducirVariasPasadasCont(NN, A, B) :-
-	
-	 A =\= B, deducirVaria, , , , a,NN) =\= 
-	
-
+deducirVariasPasadasCont(_, A, A). % Si VI = VF entonces no hubo más cambios y frenamos.
+deducirVariasPasadasCont(NN, A, B) :- A =\= B, deducirVariasPasadas(NN).
 
 % Ejercicio 8
-restriccionConMenosLibres(
-) =\= co
-	pletar("Ejercicio
-	8"
-	. =\=  :- , 
+restriccionConMenosLibres(nono(_,L),r(Res, Celdas)) :- 
+%No hay ninguna variables mas chica en L que esta
+%Y con celdas libres!
+member(r(Res, Celdas), L),
+
+cantidadVariablesLibres(Celdas, X),
+X > 0,
+
+not((
+	member(r(_, Celdas2), L),
+	cantidadVariablesLibres(Celdas2, Z),
+	Z > 0,
+	Z < X
+	)).
+% Ejercicio 9
+
+
+resolverDeduciendo(NN) :-
+	%Si lo lleno deduciendo corta
+	deducirVariasPasadas(NN),
+	nonoCompleto(NN).
+
+resolverDeduciendo(NN) :-
+	%Sino deduce lo que puede y toma una de las restricciones con menos libres
+	deducirVariasPasadas(NN),
+	restriccionConMenosLibres(NN,R),
+	!,%Muy importante sino puedo tomar todas las restricciones y se dispara el nro combinatorio
+	pintadasValidas(R),
+	resolverDeduciendo(NN).
 	
 
-% Ejercicio 9
-resolverDeduciendo(NN) :-
-	completar("Ejercicio 9").
+%Si tiene todas las celdas instanciadas es un nono ya resuelto	
+nonoCompleto(nono(_, Res)) :-
+	listaTotalInstanciada(Res).
+
+listaTotalInstanciada([]).
+listaTotalInstanciada([r(_,Celdas)|XS]):-
+	cantidadVariablesLibres(Celdas, N),
+	N == 0,
+	listaTotalInstanciada(XS).
 
 % Ejercicio 10
 solucionUnica(NN) :-
-	completar("Ejercicio 10").
+	findall(NN, resolverDeduciendo(NN), Soluciones),
+	%Si calculo todas las soluciones y tiene una sola es unica trivialmente
+	length(Soluciones, K), 
+	K == 1.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              %
