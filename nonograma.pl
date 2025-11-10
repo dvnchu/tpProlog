@@ -84,10 +84,6 @@ pintadasAux([X|XS], Espacios, L):-
 	between(1,MaxOs, CantO),
 	replicar(o, CantO, BloqueOs),
 	EspaciosSiguiente is Espacios - X - CantO,
-N Tamaño Sol_Unica  Deducible_Sin_BT
-%0  2x3		Y				Y			
-%1  5x5		Y				Y
-%2  5x5		Y				Y
 	%Usa la misma lógica que en la principal y genera las cantidades de o´s
 	%Solo que aca tiene que generar el resto de restricciones
 	pintadasAux(XS, EspaciosSiguiente, LRec),
